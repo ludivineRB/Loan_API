@@ -1,0 +1,39 @@
+# Dossiers de virtual environment
+venv/
+.venv/
+
+# Fichiers de cache Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Fichiers de log et de debug
+*.log
+
+# Configurations d'environnement
+.env
+*.env
+
+# Fichiers spécifiques à certains IDE/éditeurs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dépendances générées
+Pipfile
+Pipfile.lock
+poetry.lock
+
+# Sorties de Jupyter Notebook
+.ipynb_checkpoints/
+
+# Fichiers temporaires
+.DS_Store
+Thumbs.db
+
+#model
+loan_api/app/loan_model.pkl
+loan_model.pkl
+app/loan_model.pkl
