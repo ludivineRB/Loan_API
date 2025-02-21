@@ -8,6 +8,9 @@ import os
 from app.schemas import LoanApplication
 import sklearn
 import catboost
+from app.dependencies import get_current_user
+from datetime import datetime
+
 
 router = APIRouter(prefix="/loans", tags=["Loans"])
 # Charger le modèle une seule fois au démarrage
@@ -20,15 +23,25 @@ FEATURES = ['State', 'NAICS', 'NewExist', 'RetainedJob',
             'FranchiseCode', 'UrbanRural', 'GrAppv', 'Bank', 'Term']
 
 @router.post("/predict")
-def predict_loan_eligibility(application: LoanApplication):
+def predict_loan_eligibility(application: LoanApplication, current_user: dict = Depends(get_current_user), db: Session = Depends(get_session)):
      # Convertir l'entrée en DataFrame pour le modèle
     input_data = pd.DataFrame([application.dict()])
-
     # Faire la prédiction
     prediction = model.predict(input_data)
+    # Stocker la requête dans LoanRequest
+    loan_request = LoanRequest(
+        user_id=current_user["id"],  # ID de l'utilisateur connecté
+        amount=application.GrAppv,   # Montant demandé
+        status="approved" if prediction[0] == 1 else "denied",
+        created_at=datetime.utcnow()
+    )
+
+    db.add(loan_request)
+    db.commit()
+    db.refresh(loan_request)
 
     # Retourner la prédiction (ex: 1 = Eligible, 0 = Non éligible)
-    return {"eligible": bool(prediction[0])}
+    return {"eligible": bool(prediction[0]), "loan_request_id": loan_request.id}
 
 @router.post("/request")
 def request_loan(amount: float, user_id: int, session: Session = Depends(get_session)):

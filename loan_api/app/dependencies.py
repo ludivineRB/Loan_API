@@ -12,12 +12,17 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        return payload
-    except JWTError:
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_session)):
+    payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+    email = payload.get("sub")
+    if email is None:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+    user = db.exec(select(User).where(User.email == email)).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    return {"id": user.id, "email": user.email, "role": "admin" if user.is_admin else "user"}
 
 def get_admin_user(current_user: dict = Depends(get_current_user), session: Session = Depends(get_session)):
     user = session.exec(select(User).where(User.email == current_user["sub"])).first()
