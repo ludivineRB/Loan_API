@@ -85,6 +85,11 @@ def create_user(user: UserCreate, db: Session = Depends(get_session), admin: Use
     db.refresh(new_user)
     return {"message": "Utilisateur créé avec succès"}
 
+@router.get("/users", status_code=200)
+def get_users(session: Session = Depends(get_session), admin: User = Depends(get_admin_user)):
+    users = session.exec(select(User)).all()
+    return users
+
 @router.get("/me")
 def read_users_me(current_user: dict = Depends(get_current_user)):
     return {"email": current_user["sub"], "role": current_user.get("role")}
