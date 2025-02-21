@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 from app.models import LoanRequest
 from app.database import get_session
@@ -10,6 +10,7 @@ import sklearn
 import catboost
 from app.dependencies import get_current_user
 from datetime import datetime
+from typing import Optional
 
 
 router = APIRouter(prefix="/loans", tags=["Loans"])
@@ -51,6 +52,27 @@ def request_loan(amount: float, user_id: int, session: Session = Depends(get_ses
     return {"message": "Loan request submitted"}
 
 @router.get("/history")
-def get_loan_history(user_id: int, session: Session = Depends(get_session)):
-    loans = session.exec(select(LoanRequest).where(LoanRequest.user_id == user_id)).all()
-    return {"history": loans}
+def get_loan_history(
+    current_user: dict = Depends(get_current_user),  
+    db: Session = Depends(get_session),
+    status: Optional[str] = Query(None, description="Filtrer par statut (approved, denied, pending)")
+):
+    # Récupérer toutes les demandes de l'utilisateur
+    query = select(LoanRequest).where(LoanRequest.user_id == current_user["id"])
+
+    # Appliquer un filtre si un statut est donné
+    if status:
+        query = query.where(LoanRequest.status == status)
+
+    loan_requests = db.exec(query).all()
+
+    # Retourner l'historique des demandes
+    return [
+        {
+            "id": request.id,
+            "amount": request.amount,
+            "status": request.status,
+            "created_at": request.created_at
+        }
+        for request in loan_requests
+    ]
