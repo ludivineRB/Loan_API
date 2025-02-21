@@ -25,9 +25,19 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     return {"id": user.id, "email": user.email, "role": "admin" if user.is_admin else "user"}
 
 def get_admin_user(current_user: dict = Depends(get_current_user), session: Session = Depends(get_session)):
-    user = session.exec(select(User).where(User.email == current_user["sub"])).first()
-    if not user or not user.is_admin:
+    print(f"DEBUG: current_user = {current_user}")
+    email = current_user.get("email")
+    if not email:
+        raise HTTPException(status_code=401, detail="Invalid token or user not authenticated")
+
+    user = session.exec(select(User).where(User.email == current_user["email"])).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not user.is_admin:
         raise HTTPException(status_code=403, detail="Admin access required")
+
     return user
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
