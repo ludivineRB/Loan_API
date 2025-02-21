@@ -4,10 +4,7 @@ from app.models import LoanRequest
 from app.database import get_session
 import pickle
 import pandas as pd
-import os
 from app.schemas import LoanApplication
-import sklearn
-import catboost
 from app.dependencies import get_current_user
 from datetime import datetime
 from typing import Optional

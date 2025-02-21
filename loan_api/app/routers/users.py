@@ -69,7 +69,7 @@ def activate_account(user_data: UserActivation, session: Session = Depends(get_s
     session.commit()
     return {"message": "Account activated"}
 
-@router.post("/admin/users", status_code=201)
+@router.post("/users", status_code=201)
 def create_user(user: UserCreate, db: Session = Depends(get_session), admin: User = Depends(get_admin_user)):
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
